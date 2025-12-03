@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Product – Game Store{% endblock %}
+
+{% block content %}
+  <h1>Add New Product</h1>
+
+  <form method="post">
+    {% csrf_token %}
+    <table>
+      {{ form.as_table }}
+    </table>
+
+    <button type="submit" class="btn" style="margin-top:1rem;">
+      Save Product
+    </button>
+  </form>
+{% endblock %}
