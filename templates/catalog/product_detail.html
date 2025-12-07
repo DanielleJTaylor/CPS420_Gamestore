@@ -15,7 +15,11 @@
     <strong style="font-size:1.4rem;">${{ product.price }}</strong>
   </div>
 
-  {% if product.image_url %}
+  {% if product.image %}
+    <div style="margin-bottom:1rem;">
+      <img src="{{ product.image.url }}" alt="{{ product.name }}" style="max-width:300px; border-radius:4px;">
+    </div>
+  {% elif product.image_url %}
     <div style="margin-bottom:1rem;">
       <img src="{{ product.image_url }}" alt="{{ product.name }}" style="max-width:300px; border-radius:4px;">
     </div>

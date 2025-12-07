@@ -5,14 +5,116 @@
 {% block content %}
   <h1>Add New Product</h1>
 
-  <form method="post">
+  <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
+
     <table>
-      {{ form.as_table }}
+      {{ form.non_field_errors }}
+
+      {{ form.name.errors }}
+      <tr>
+        <th>{{ form.name.label_tag }}</th>
+        <td>{{ form.name }}</td>
+      </tr>
+
+      {{ form.slug.errors }}
+      <tr>
+        <th>{{ form.slug.label_tag }}</th>
+        <td>{{ form.slug }}</td>
+      </tr>
+
+      {{ form.price.errors }}
+      <tr>
+        <th>{{ form.price.label_tag }}</th>
+        <td>{{ form.price }}</td>
+      </tr>
+
+      {{ form.inventory_qty.errors }}
+      <tr>
+        <th>{{ form.inventory_qty.label_tag }}</th>
+        <td>{{ form.inventory_qty }}</td>
+      </tr>
+
+      <!-- Image upload with drag-and-drop -->
+      {{ form.image.errors }}
+      <tr>
+        <th>{{ form.image.label_tag }}</th>
+        <td>
+          <div id="image-dropzone"
+               style="border:2px dashed #00bcd4; padding:1rem; text-align:center; border-radius:6px; cursor:pointer;">
+            Drag & drop image here, or click to choose a file
+          </div>
+          <!-- Django's file input (we hide it visually but still use it) -->
+          <div style="margin-top:0.5rem;">
+            {{ form.image }}
+          </div>
+        </td>
+      </tr>
+
+      <!-- Optional image URL fallback -->
+      {{ form.image_url.errors }}
+      <tr>
+        <th>{{ form.image_url.label_tag }}</th>
+        <td>{{ form.image_url }}</td>
+      </tr>
+
+      {{ form.description.errors }}
+      <tr>
+        <th>{{ form.description.label_tag }}</th>
+        <td>{{ form.description }}</td>
+      </tr>
+
+      {{ form.category.errors }}
+      <tr>
+        <th>{{ form.category.label_tag }}</th>
+        <td>{{ form.category }}</td>
+      </tr>
     </table>
 
     <button type="submit" class="btn" style="margin-top:1rem;">
       Save Product
     </button>
   </form>
+
+  <script>
+    (function() {
+      const dropZone = document.getElementById("image-dropzone");
+      const fileInput = document.getElementById("id_image");
+
+      if (!dropZone || !fileInput) return;
+
+      const preventDefaults = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      };
+
+      ["dragenter", "dragover", "dragleave", "drop"].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+      });
+
+      ["dragenter", "dragover"].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+          dropZone.style.backgroundColor = "#002b36";
+        }, false);
+      });
+
+      ["dragleave", "drop"].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+          dropZone.style.backgroundColor = "transparent";
+        }, false);
+      });
+
+      dropZone.addEventListener("click", () => {
+        fileInput.click();
+      });
+
+      dropZone.addEventListener("drop", (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files && files.length > 0) {
+          fileInput.files = files;
+        }
+      });
+    })();
+  </script>
 {% endblock %}
