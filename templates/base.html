@@ -1,0 +1,75 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{% block title %}Game Store{% endblock %}</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #1b1b1b;
+        color: #f5f5f5;
+      }
+      header {
+        background: #252525;
+        padding: 1rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      header a {
+        color: #f5f5f5;
+        text-decoration: none;
+        margin-right: 1rem;
+      }
+      header a.brand {
+        font-weight: bold;
+        font-size: 1.3rem;
+      }
+      main {
+        padding: 2rem;
+      }
+      .btn {
+        display: inline-block;
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        border: 1px solid #00bcd4;
+        color: #00bcd4;
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+      .btn:hover {
+        background: #00bcd4;
+        color: #1b1b1b;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <a href="{% url 'product_list' %}" class="brand">🎮 Game Store</a>
+      </div>
+      <div>
+        {% if user.is_authenticated %}
+          <span>Hi, {{ user.username }}!</span>
+
+          {% if user.is_staff %}
+            <a href="{% url 'product_create' %}" class="btn">+ Add Product</a>
+          {% endif %}
+
+          <a href="{% url 'logout' %}">Logout</a>
+          <a href="/admin/">Admin</a>
+        {% else %}
+          <a href="{% url 'login' %}">Login</a>
+          <a href="{% url 'signup' %}">Sign Up</a>
+          <a href="/admin/">Admin</a>
+        {% endif %}
+      </div>
+    </header>
+
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

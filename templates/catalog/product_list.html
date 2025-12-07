@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Game Store – Products{% endblock %}
+
+{% block content %}
+  <h1>Available Games & Items</h1>
+
+  {% if products %}
+    <ul style="list-style:none; padding:0; display:grid; gap:1rem;">
+      {% for p in products %}
+        <li style="border:1px solid #333; border-radius:8px; padding:1rem; background:#222;">
+          <h2 style="margin-top:0;">
+            <a href="{% url 'product_detail' p.slug %}" style="color:#00bcd4; text-decoration:none;">
+              {{ p.name }}
+            </a>
+          </h2>
+
+          <div><strong>${{ p.price }}</strong></div>
+
+          {% if p.image %}
+            <div style="margin-top:0.5rem;">
+              <img src="{{ p.image.url }}" alt="{{ p.name }}" style="max-width:200px; border-radius:4px;">
+            </div>
+          {% elif p.image_url %}
+            <div style="margin-top:0.5rem;">
+              <img src="{{ p.image_url }}" alt="{{ p.name }}" style="max-width:200px; border-radius:4px;">
+            </div>
+          {% endif %}
+
+          <p style="margin-top:0.5rem;">
+            {{ p.description|truncatewords:20 }}
+          </p>
+
+          <small>
+            Category: {{ p.category|default:"Uncategorized" }} |
+            In Stock: {{ p.inventory_qty }}
+          </small>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No products yet. Log in as admin and add one, or use the Django admin.</p>
+  {% endif %}
+{% endblock %}
