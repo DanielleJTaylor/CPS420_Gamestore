@@ -21,3 +21,23 @@ def product_create(request):
     else:
         form = ProductForm()
     return render(request, "catalog/product_form.html", {"form": form})
+
+
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login
+
+def signup(request):
+    """
+    Simple user registration.
+    Creates a new user and logs them in immediately.
+    """
+    if request.method == "POST":
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()          # Create user
+            login(request, user)        # Auto-login
+            return redirect("product_list")
+    else:
+        form = UserCreationForm()
+
+    return render(request, "registration/signup.html", {"form": form})
