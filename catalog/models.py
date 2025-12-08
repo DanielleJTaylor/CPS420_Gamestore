@@ -31,13 +31,14 @@ class Event(models.Model):
     # explicit calendar date for the event
     date = models.DateField(default=timezone.now)
 
-    # full datetime for when it starts
+    # full datetime (you can later change to TimeField if you want only time)
     start_time = models.DateTimeField(default=timezone.now)
 
     capacity = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        # sort upcoming events by date, then time
         ordering = ["date", "start_time"]
 
     def __str__(self):
@@ -72,16 +73,25 @@ class EventRegistration(models.Model):
 
 
 # =========================
-# ROOM BOOKING
+# ROOMS & ROOM BOOKINGS
 # =========================
 
 class Room(models.Model):
     """
-    Fixed set of rooms in the store.
+    A physical gaming room (Small TTRPG, Large TTRPG, TV Lounge).
     """
-    name = models.CharField(max_length=100, unique=True)
-    # hex color used for calendar tag
-    color = models.CharField(max_length=7, default="#2563eb")
+
+    name = models.CharField(max_length=120)
+    slug = models.SlugField(unique=True)
+
+    # how many players can fit comfortably
+    capacity = models.PositiveIntegerField(default=4)
+
+    # short blurb for the UI
+    description = models.TextField(blank=True)
+
+    # optional color for UI (e.g., calendar tag)
+    color = models.CharField(max_length=7, default="#2563eb")  # hex like "#2563eb"
 
     def __str__(self):
         return self.name
@@ -89,29 +99,34 @@ class Room(models.Model):
 
 class RoomBooking(models.Model):
     """
-    A single room reservation on a given date/time by a user.
+    A single reservation of a room by a user.
+    Tracks start/end time and an optional fee.
     """
-    ROOM_CHOICES = (
-        ("Large TTRPG", "Large TTRPG"),
-        ("Small Private TTRPG", "Small Private TTRPG"),
-        ("TV Lounge", "TV Lounge"),
+
+    room = models.ForeignKey(
+        Room,
+        related_name="bookings",
+        on_delete=models.CASCADE,
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
     )
 
-    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="bookings")
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
 
-    date = models.DateField()  # calendar date
-    start_time = models.TimeField()
-    end_time = models.TimeField()
+    # simple money field; you can ignore if you don't care right now
+    fee_charged = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=0,
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["date", "start_time"]
+        ordering = ["start_time"]
 
     def __str__(self):
-        return f"{self.room.name} on {self.date} ({self.start_time}-{self.end_time})"
-
-    @property
-    def label(self):
-        return f"{self.date} {self.start_time}-{self.end_time}"
+        return f"{self.room.name} for {self.user} at {self.start_time}"

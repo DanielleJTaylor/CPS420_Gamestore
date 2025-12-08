@@ -173,7 +173,6 @@ def cart_update_quantity(request, product_id):
     if direction == "up":
         cart.add(product, quantity=1)
     elif direction == "down":
-        # decrease by 1; your Cart.add() / Cart class should handle quantity <= 0
         cart.add(product, quantity=-1)
 
     return redirect("cart_detail")
@@ -267,6 +266,24 @@ def event_unregister(request, slug):
     return redirect("event_detail", slug=event.slug)
 
 
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth import login, logout
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.decorators import user_passes_test, login_required
+from django.contrib import messages
+
+from .models import (
+    Product,
+    Event,
+    EventRegistration,
+    Room,
+    RoomBooking,
+)
+from .forms import ProductForm, EventForm, RoomBookingForm
+from .cart import Cart
+
+# ... all your existing product / auth / cart / event views ...
+
 # =========================
 # ROOM BOOKING VIEWS
 # =========================
@@ -274,60 +291,97 @@ def event_unregister(request, slug):
 @login_required
 def room_booking_list(request):
     """
-    List all rooms and show bookings below, grouped by room.
+    Show available rooms and all upcoming bookings.
+    Also includes a 'Book a Room' form that lets the user pick a room + times.
     """
+
+    # If no rooms exist yet, seed the 3 default rooms once.
+    if not Room.objects.exists():
+        Room.objects.get_or_create(
+            slug="small-ttrpg",
+            defaults={
+                "name": "Small TTRPG Room",
+                "capacity": 8,
+                "description": "Cozy table space for 4–8 players.",
+            },
+        )
+        Room.objects.get_or_create(
+            slug="large-ttrpg",
+            defaults={
+                "name": "Large TTRPG Room",
+                "capacity": 30,
+                "description": "Multiple tables for big campaigns (10–30 players).",
+            },
+        )
+        Room.objects.get_or_create(
+            slug="tv-lounge",
+            defaults={
+                "name": "TV Lounge",
+                "capacity": 10,
+                "description": "Sofa seating and TV setup for console nights.",
+            },
+        )
+
     rooms = Room.objects.all().order_by("name")
-    bookings = RoomBooking.objects.select_related("room", "user").order_by(
-        "date", "start_time"
+
+    # All bookings (shared calendar)
+    bookings = (
+        RoomBooking.objects
+        .select_related("room", "user")
+        .order_by("start_time")
     )
 
-    # group bookings by room
-    bookings_by_room = {}
-    for b in bookings:
-        bookings_by_room.setdefault(b.room_id, []).append(b)
+    # Pre-select room if ?room=<slug> is in the query string
+    preselected_slug = request.GET.get("room")
+    initial = {}
+    if preselected_slug:
+        try:
+            initial["room"] = Room.objects.get(slug=preselected_slug)
+        except Room.DoesNotExist:
+            pass
+
+    if request.method == "POST":
+        booking_form = RoomBookingForm(request.POST)
+        if booking_form.is_valid():
+            booking = booking_form.save(commit=False)
+            booking.user = request.user
+
+            # Conflict check: same room, overlapping time
+            conflict_exists = RoomBooking.objects.filter(
+                room=booking.room,
+                start_time__lt=booking.end_time,
+                end_time__gt=booking.start_time,
+            ).exists()
+
+            if conflict_exists:
+                messages.error(
+                    request,
+                    "That time slot is already booked for this room.",
+                )
+            else:
+                booking.save()
+                messages.success(
+                    request,
+                    f"You reserved {booking.room.name} from "
+                    f"{booking.start_time} to {booking.end_time}.",
+                )
+                return redirect("room_booking_list")
+    else:
+        booking_form = RoomBookingForm(initial=initial)
 
     context = {
         "rooms": rooms,
-        "bookings_by_room": bookings_by_room,
+        "bookings": bookings,
+        "booking_form": booking_form,
     }
     return render(request, "rooms/room_booking_list.html", context)
-
-
-@login_required
-def room_booking_create(request, slug):
-    """
-    Customer: book a specific room for a date/time.
-    """
-    room = get_object_or_404(Room, slug=slug)
-
-    if request.method == "POST":
-        form = RoomBookingForm(request.POST)
-        if form.is_valid():
-            booking = form.save(commit=False)
-            booking.user = request.user
-            booking.room = room
-            booking.save()
-            messages.success(request, f"Room '{room.name}' booked successfully.")
-            return redirect("room_booking_list")
-    else:
-        form = RoomBookingForm()
-
-    return render(
-        request,
-        "rooms/room_booking_form.html",
-        {
-            "room": room,
-            "form": form,
-        },
-    )
 
 
 @login_required
 def room_booking_cancel(request, booking_id):
     """
     Cancel a booking.
-    Users can cancel their own bookings;
-    staff can cancel any booking.
+    Users can cancel their own bookings; staff can cancel any booking.
     """
     booking = get_object_or_404(RoomBooking, id=booking_id)
 

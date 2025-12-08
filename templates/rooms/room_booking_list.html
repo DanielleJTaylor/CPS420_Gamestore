@@ -18,7 +18,7 @@
       gap:24px;
       margin-top:24px;
     ">
-      <!-- LEFT: ROOM CARDS -->
+      <!-- LEFT: ROOM CARDS + BOOKING FORM -->
       <section>
         <h2 style="font-size:1.1rem; margin-bottom:10px;">Available Rooms</h2>
 
@@ -45,7 +45,7 @@
 
                 {% if room.capacity %}
                   <p style="margin:0 0 6px; font-size:0.85rem; color:#9ca3af;">
-                    Capacity: <strong>{{ room.capacity }}</strong> players
+                    Capacity: <strong>{{ room.capacity }}</strong> people
                   </p>
                 {% endif %}
 
@@ -60,8 +60,12 @@
                 {% endif %}
 
                 <div style="margin-top:auto; display:flex; justify-content:flex-end;">
+                  <!--
+                    Clicking this just reloads /rooms/?room=<slug>#booking-form
+                    so the form below pre-selects this room.
+                  -->
                   <a
-                    href="{% url 'room_booking_create' room.slug %}"
+                    href="{% url 'room_booking_list' %}?room={{ room.slug }}#booking-form"
                     class="btn btn-primary btn-sm"
                     style="width:auto; margin-top:0;"
                   >
@@ -74,6 +78,43 @@
         {% else %}
           <p>No rooms are configured yet.</p>
         {% endif %}
+
+        <!-- BOOKING FORM -->
+        <div id="booking-form" style="margin-top:24px;">
+          <h2 style="font-size:1.05rem; margin-bottom:8px;">Book a Room</h2>
+
+          {% if not user.is_authenticated %}
+            <p style="font-size:0.9rem; color:#f97316;">
+              Please <a href="{% url 'login' %}">log in</a> to book a room.
+            </p>
+          {% else %}
+            <form method="post" action="{% url 'room_booking_list' %}">
+              {% csrf_token %}
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div>
+                  <label style="font-size:0.85rem; color:#9ca3af;">Room</label>
+                  {{ booking_form.room }}
+                </div>
+                <div>
+                  <label style="font-size:0.85rem; color:#9ca3af;">Start time</label>
+                  {{ booking_form.start_time }}
+                </div>
+                <div>
+                  <label style="font-size:0.85rem; color:#9ca3af;">End time</label>
+                  {{ booking_form.end_time }}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                class="btn btn-primary btn-sm"
+                style="margin-top:14px; width:auto;"
+              >
+                Confirm Booking
+              </button>
+            </form>
+          {% endif %}
+        </div>
       </section>
 
       <!-- RIGHT: UPCOMING BOOKINGS -->
