@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Events – Game Store{% endblock %}
+
+{% block content %}
+  <h1>Upcoming Events</h1>
+
+  {% if user.is_staff %}
+    <p>
+      <a href="{% url 'event_create' %}" class="btn btn-primary">
+        + Create Event
+      </a>
+    </p>
+  {% endif %}
+
+  {% if events %}
+    <div class="auction-grid">
+      {% for e in events %}
+        <article class="auction-card">
+          <div class="auction-main">
+            <header class="auction-card-header">
+              <h2 class="auction-title">
+                <a href="{% url 'event_detail' e.slug %}">
+                  {{ e.title }}
+                </a>
+              </h2>
+            </header>
+
+            <div class="auction-body">
+              <p class="auction-description">
+                {{ e.description|default:"No description yet."|truncatewords:25 }}
+              </p>
+            </div>
+          </div>
+
+          <footer class="auction-card-footer">
+            <div class="auction-footer-meta">
+              <p class="auction-meta-line">
+                <span class="auction-meta-em">Starts:</span>
+                {{ e.start_time|date:"M d, Y H:i" }}
+              </p>
+
+              {% if e.capacity %}
+                <p class="auction-meta-line">
+                  <span class="auction-meta-em">Spots:</span>
+                  {{ e.registrations_count }}/{{ e.capacity }}
+                </p>
+              {% else %}
+                <p class="auction-meta-line">
+                  <span class="auction-meta-em">Spots:</span>
+                  Unlimited
+                </p>
+              {% endif %}
+            </div>
+
+            <div class="auction-footer-actions">
+              <a href="{% url 'event_detail' e.slug %}"
+                 class="btn btn-secondary btn-sm auction-details-btn">
+                View Details
+              </a>
+            </div>
+          </footer>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>No events have been scheduled yet.</p>
+  {% endif %}
+{% endblock %}

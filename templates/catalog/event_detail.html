@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.title }} – Event{% endblock %}
+
+{% block content %}
+  <p>
+    <a href="{% url 'event_list' %}" class="btn btn-sm btn-secondary">
+      ← Back to events
+    </a>
+  </p>
+
+  <section class="tt-detail-page">
+    <div class="tt-detail-layout">
+      <!-- LEFT: simple info block -->
+      <div class="tt-detail-media">
+        <h1 class="tt-detail-title">{{ event.title }}</h1>
+        <p class="tt-detail-meta">
+          Starts: {{ event.start_time|date:"M d, Y H:i" }}
+        </p>
+
+        {% if event.capacity %}
+          <p class="tt-detail-meta">
+            Capacity: {{ event.registrations_count }} / {{ event.capacity }}
+          </p>
+        {% else %}
+          <p class="tt-detail-meta">
+            Capacity: Unlimited
+          </p>
+        {% endif %}
+      </div>
+
+      <!-- RIGHT: description + registration -->
+      <div class="tt-detail-info">
+        <div class="tt-detail-description">
+          <h2>About this event</h2>
+          <p>
+            {{ event.description|default:"No description provided."|linebreaks }}
+          </p>
+        </div>
+
+        <div class="tt-detail-actions" style="margin-top: 24px;">
+          {% if user.is_authenticated %}
+            {% if user_registration %}
+              <span class="auction-footer-meta">
+                ✅ You are registered for this event.
+              </span>
+            {% else %}
+              {% if event.capacity and event.registrations_count >= event.capacity %}
+                <span class="auction-footer-meta">
+                  ❌ This event is full.
+                </span>
+              {% else %}
+                <form method="post" action="{% url 'event_register' event.slug %}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-primary">
+                    Register for this Event
+                  </button>
+                </form>
+              {% endif %}
+            {% endif %}
+          {% else %}
+            <p class="auction-footer-meta">
+              Please <a href="{% url 'login' %}?next={% url 'event_detail' event.slug %}">log in</a>
+              to register for this event.
+            </p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
