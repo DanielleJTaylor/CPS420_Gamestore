@@ -1,13 +1,8 @@
 ﻿from django import forms
-from .models import Product, Event
+from .models import Product, Event, RoomBooking, Room
 
 
 class ProductForm(forms.ModelForm):
-    """
-    Form used by staff/admin to create or edit products.
-    Supports uploaded images and optional external image URLs.
-    """
-
     class Meta:
         model = Product
         fields = [
@@ -20,40 +15,58 @@ class ProductForm(forms.ModelForm):
             "description",
             "category",
         ]
-        widgets = {
-            "name": forms.TextInput(attrs={"class": "form-control"}),
-            "slug": forms.TextInput(attrs={"class": "form-control"}),
-            "price": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
-            "inventory_qty": forms.NumberInput(
-                attrs={"class": "form-control", "min": "0"}
-            ),
-            "image": forms.ClearableFileInput(attrs={"class": "form-control"}),
-            "image_url": forms.URLInput(attrs={"class": "form-control"}),
-            "description": forms.Textarea(
-                attrs={"class": "form-control", "rows": 4}
-            ),
-            "category": forms.TextInput(attrs={"class": "form-control"}),
-        }
 
 
 class EventForm(forms.ModelForm):
-    """
-    Staff-only form to create or edit events that customers can register for.
-    """
-
     class Meta:
         model = Event
-        fields = ["title", "slug", "description", "start_time", "capacity"]
+        fields = [
+            "title",
+            "slug",
+            "description",
+            "date",
+            "start_time",
+            "capacity",
+        ]
         widgets = {
-            "title": forms.TextInput(attrs={"class": "form-control"}),
-            "slug": forms.TextInput(attrs={"class": "form-control"}),
-            "description": forms.Textarea(
-                attrs={"class": "form-control", "rows": 4}
-            ),
-            "start_time": forms.DateTimeInput(
-                attrs={"class": "form-control", "type": "datetime-local"}
-            ),
-            "capacity": forms.NumberInput(
-                attrs={"class": "form-control", "min": "0"}
-            ),
+            "date": forms.DateInput(attrs={"type": "date"}),
+            "start_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
+
+
+class RoomBookingForm(forms.ModelForm):
+    class Meta:
+        model = RoomBooking
+        fields = ["room", "date", "start_time", "end_time"]
+
+        widgets = {
+            "room": forms.Select(),
+            "date": forms.DateInput(attrs={"type": "date"}),
+            "start_time": forms.TimeInput(attrs={"type": "time"}),
+            "end_time": forms.TimeInput(attrs={"type": "time"}),
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        room = cleaned.get("room")
+        date = cleaned.get("date")
+        start = cleaned.get("start_time")
+        end = cleaned.get("end_time")
+
+        if start and end and start >= end:
+            raise forms.ValidationError("End time must be after start time.")
+
+        # basic overlap check (view will also enforce)
+        if room and date and start and end:
+            qs = RoomBooking.objects.filter(
+                room=room,
+                date=date,
+                start_time__lt=end,
+                end_time__gt=start,
+            )
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise forms.ValidationError("This time slot is already booked.")
+
+        return cleaned

@@ -1,11 +1,18 @@
-﻿from django.shortcuts import render, get_object_or_404, redirect
+﻿# catalog/views.py
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib import messages
 
-from .models import Product, Event, EventRegistration
-from .forms import ProductForm, EventForm
+from .models import (
+    Product,
+    Event,
+    EventRegistration,
+    Room,
+    RoomBooking,
+)
+from .forms import ProductForm, EventForm, RoomBookingForm
 from .cart import Cart
 
 
@@ -14,9 +21,7 @@ from .cart import Cart
 # =========================
 
 def is_staff_user(user):
-    """
-    Helper used by user_passes_test to allow only staff/admin users.
-    """
+    """Helper used by user_passes_test to allow only staff/admin users."""
     return user.is_staff
 
 
@@ -39,9 +44,7 @@ def product_list(request):
 
 
 def product_detail(request, slug):
-    """
-    Show a single product detail page by slug.
-    """
+    """Show a single product detail page by slug."""
     product = get_object_or_404(Product, slug=slug)
     return render(request, "catalog/product_detail.html", {"product": product})
 
@@ -67,9 +70,7 @@ def product_create(request):
 
 @user_passes_test(is_staff_user)
 def product_edit(request, slug):
-    """
-    Edit an existing product (staff only).
-    """
+    """Edit an existing product (staff only)."""
     product = get_object_or_404(Product, slug=slug)
 
     if request.method == "POST":
@@ -119,7 +120,7 @@ def logout_view(request):
     return redirect("product_list")
 
 
-# Alias used in urls.py from earlier instructions
+# alias for urls.py
 signup_view = signup
 
 
@@ -128,9 +129,7 @@ signup_view = signup
 # =========================
 
 def cart_detail(request):
-    """
-    Show the current cart.
-    """
+    """Show the current cart."""
     cart = Cart(request)
     return render(request, "cart/cart_detail.html", {"cart": cart})
 
@@ -148,9 +147,7 @@ def cart_add(request, product_id):
 
 
 def cart_remove(request, product_id):
-    """
-    Remove a product entirely from the cart.
-    """
+    """Remove a product entirely from the cart."""
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
     cart.remove(product)
@@ -162,31 +159,28 @@ def cart_update_quantity(request, product_id):
     """
     Adjust quantity using up/down arrow buttons.
 
-    Expects a POST with a hidden "action" field:
-      - action="inc" → increment by 1
-      - action="dec" → decrement by 1 (and remove if it hits 0)
+    Template sends:
+      - name="direction" value="up"   → increment
+      - name="direction" value="down" → decrement
     """
     if request.method != "POST":
         return redirect("cart_detail")
 
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
-    action = request.POST.get("action")
+    direction = request.POST.get("direction")
 
-    if action == "inc":
-        # increase quantity by 1
+    if direction == "up":
         cart.add(product, quantity=1)
-    elif action == "dec":
-        # decrease quantity by 1 – relies on Cart.add() handling <=0 as remove
+    elif direction == "down":
+        # decrease by 1; your Cart.add() / Cart class should handle quantity <= 0
         cart.add(product, quantity=-1)
 
     return redirect("cart_detail")
 
 
 def cart_clear(request):
-    """
-    Optional: clear the entire cart.
-    """
+    """Clear the entire cart."""
     cart = Cart(request)
     cart.clear()
     messages.info(request, "Cart cleared.")
@@ -198,17 +192,13 @@ def cart_clear(request):
 # =========================
 
 def event_list(request):
-    """
-    List all upcoming events that customers can register for.
-    """
-    events = Event.objects.all().order_by("start_time")
+    """List all upcoming events that customers can register for."""
+    events = Event.objects.all().order_by("date", "start_time")
     return render(request, "events/event_list.html", {"events": events})
 
 
 def event_detail(request, slug):
-    """
-    Show a single event with registration info.
-    """
+    """Show a single event with registration info."""
     event = get_object_or_404(Event, slug=slug)
     is_registered = False
 
@@ -229,9 +219,7 @@ def event_detail(request, slug):
 
 @user_passes_test(is_staff_user)
 def event_create(request):
-    """
-    Staff-only: create a new event.
-    """
+    """Staff-only: create a new event."""
     if request.method == "POST":
         form = EventForm(request.POST)
         if form.is_valid():
@@ -253,18 +241,18 @@ def event_register(request, slug):
     """
     event = get_object_or_404(Event, slug=slug)
 
-    # Check if already registered
+    # already registered?
     if EventRegistration.objects.filter(event=event, user=request.user).exists():
         messages.info(request, "You are already registered for this event.")
         return redirect("event_detail", slug=event.slug)
 
-    # Capacity check
+    # capacity check
     current_count = EventRegistration.objects.filter(event=event).count()
-    if event.capacity is not None and current_count >= event.capacity:
+    if event.capacity and current_count >= event.capacity:
         messages.error(request, "This event is full.")
         return redirect("event_detail", slug=event.slug)
 
-    # Create registration
+    # create registration
     EventRegistration.objects.create(event=event, user=request.user)
     messages.success(request, "You are registered for this event!")
     return redirect("event_detail", slug=event.slug)
@@ -272,10 +260,81 @@ def event_register(request, slug):
 
 @login_required
 def event_unregister(request, slug):
-    """
-    Optional: allow a user to unregister from an event.
-    """
+    """Allow a user to unregister from an event."""
     event = get_object_or_404(Event, slug=slug)
     EventRegistration.objects.filter(event=event, user=request.user).delete()
     messages.info(request, "You have been unregistered from this event.")
     return redirect("event_detail", slug=event.slug)
+
+
+# =========================
+# ROOM BOOKING VIEWS
+# =========================
+
+@login_required
+def room_booking_list(request):
+    """
+    List all rooms and show bookings below, grouped by room.
+    """
+    rooms = Room.objects.all().order_by("name")
+    bookings = RoomBooking.objects.select_related("room", "user").order_by(
+        "date", "start_time"
+    )
+
+    # group bookings by room
+    bookings_by_room = {}
+    for b in bookings:
+        bookings_by_room.setdefault(b.room_id, []).append(b)
+
+    context = {
+        "rooms": rooms,
+        "bookings_by_room": bookings_by_room,
+    }
+    return render(request, "rooms/room_booking_list.html", context)
+
+
+@login_required
+def room_booking_create(request, slug):
+    """
+    Customer: book a specific room for a date/time.
+    """
+    room = get_object_or_404(Room, slug=slug)
+
+    if request.method == "POST":
+        form = RoomBookingForm(request.POST)
+        if form.is_valid():
+            booking = form.save(commit=False)
+            booking.user = request.user
+            booking.room = room
+            booking.save()
+            messages.success(request, f"Room '{room.name}' booked successfully.")
+            return redirect("room_booking_list")
+    else:
+        form = RoomBookingForm()
+
+    return render(
+        request,
+        "rooms/room_booking_form.html",
+        {
+            "room": room,
+            "form": form,
+        },
+    )
+
+
+@login_required
+def room_booking_cancel(request, booking_id):
+    """
+    Cancel a booking.
+    Users can cancel their own bookings;
+    staff can cancel any booking.
+    """
+    booking = get_object_or_404(RoomBooking, id=booking_id)
+
+    if request.user == booking.user or request.user.is_staff:
+        booking.delete()
+        messages.info(request, "Booking cancelled.")
+    else:
+        messages.error(request, "You are not allowed to cancel this booking.")
+
+    return redirect("room_booking_list")

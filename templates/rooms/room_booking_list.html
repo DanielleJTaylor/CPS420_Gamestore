@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Room Bookings – Game Store{% endblock %}
+
+{% block content %}
+<main class="tt-page tt-detail-page">
+  <div class="tt-container">
+    <h1>Room Bookings</h1>
+    <p style="color:#9ca3af; max-width:720px;">
+      Reserve one of our gaming rooms for your next TTRPG or console session.
+      Rooms share a calendar so the staff can see everything at a glance.
+    </p>
+
+    <div style="
+      display:grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap:24px;
+      margin-top:24px;
+    ">
+      <!-- LEFT: ROOM CARDS -->
+      <section>
+        <h2 style="font-size:1.1rem; margin-bottom:10px;">Available Rooms</h2>
+
+        {% if rooms %}
+          <div style="
+            display:grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap:16px;
+          ">
+            {% for room in rooms %}
+              <article style="
+                background:#050816;
+                border-radius:16px;
+                padding:14px 16px 16px;
+                border:1px solid #1a2232;
+                box-shadow:0 12px 30px rgba(0,0,0,.4);
+                display:flex;
+                flex-direction:column;
+                min-height:180px;
+              ">
+                <h3 style="margin:0 0 4px; font-size:1rem; color:#e5e7eb;">
+                  {{ room.name }}
+                </h3>
+
+                {% if room.capacity %}
+                  <p style="margin:0 0 6px; font-size:0.85rem; color:#9ca3af;">
+                    Capacity: <strong>{{ room.capacity }}</strong> players
+                  </p>
+                {% endif %}
+
+                {% if room.description %}
+                  <p style="
+                    margin:0 0 10px;
+                    font-size:0.9rem;
+                    color:#d1d5db;
+                  ">
+                    {{ room.description }}
+                  </p>
+                {% endif %}
+
+                <div style="margin-top:auto; display:flex; justify-content:flex-end;">
+                  <a
+                    href="{% url 'room_booking_create' room.slug %}"
+                    class="btn btn-primary btn-sm"
+                    style="width:auto; margin-top:0;"
+                  >
+                    Book this room
+                  </a>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p>No rooms are configured yet.</p>
+        {% endif %}
+      </section>
+
+      <!-- RIGHT: UPCOMING BOOKINGS -->
+      <section>
+        <h2 style="font-size:1.1rem; margin-bottom:10px;">Upcoming Bookings</h2>
+
+        {% if bookings %}
+          <ul style="list-style:none; padding:0; margin:0;">
+            {% for b in bookings %}
+              <li style="
+                margin-bottom:8px;
+                padding:8px 10px;
+                border-radius:10px;
+                background:#0b1020;
+                border-left:4px solid #2563eb;
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                font-size:0.9rem;
+              ">
+                <div>
+                  <div style="font-weight:600; color:#e5e7eb;">
+                    {{ b.room.name }}
+                  </div>
+                  <div style="color:#9ca3af; font-size:0.82rem;">
+                    {{ b.start_time|date:"M j, Y, g:i a" }}
+                    –
+                    {{ b.end_time|date:"g:i a" }}
+                  </div>
+                  {% if b.user %}
+                    <div style="color:#6b7280; font-size:0.8rem;">
+                      Booked by: {{ b.user.username }}
+                    </div>
+                  {% endif %}
+                </div>
+
+                {% if user.is_authenticated and b.user == user %}
+                  <form
+                    action="{% url 'room_booking_cancel' b.id %}"
+                    method="post"
+                    style="margin:0;"
+                  >
+                    {% csrf_token %}
+                    <button
+                      type="submit"
+                      class="btn btn-sm btn-danger"
+                      style="width:auto; margin-top:0;"
+                    >
+                      Cancel
+                    </button>
+                  </form>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p style="color:#9ca3af; font-size:0.9rem;">
+            No bookings yet. Be the first to reserve a room!
+          </p>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+</main>
+
+<style>
+  @media (max-width: 900px) {
+    main.tt-page .tt-container > div[style*="grid-template-columns"] {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+  }
+</style>
+{% endblock %}

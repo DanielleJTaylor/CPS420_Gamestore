@@ -8,6 +8,42 @@
 
     <!-- Main app styles -->
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
+
+    <style>
+      /* simple styled flash messages */
+      .tt-flash-container {
+        margin-top: 16px;
+        margin-bottom: 8px;
+      }
+      .tt-flash {
+        padding: 8px 12px;
+        border-radius: 8px;
+        margin-bottom: 6px;
+        font-size: 0.92rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .tt-flash-info {
+        background: #1f2933;
+      }
+      .tt-flash-success {
+        background: #064e3b;
+      }
+      .tt-flash-error {
+        background: #7f1d1d;
+      }
+      .tt-flash-warning {
+        background: #78350f;
+      }
+
+      /* make chip behave as clickable when it's a link */
+      .tt-chip-link {
+        text-decoration: none;
+      }
+      .tt-chip-link:hover {
+        text-decoration: none;
+        filter: brightness(1.05);
+      }
+    </style>
   </head>
   <body>
     <!-- HEADER / NAVBAR -->
@@ -42,21 +78,39 @@
               🛒 Cart
             </a>
 
+            <!-- Events button -->
+            <a href="{% url 'event_list' %}" class="tt-btn tt-btn-ghost">
+              📅 Events
+            </a>
+
+            <!-- Rooms / Room Booking button -->
+            <a href="{% url 'room_booking_list' %}" class="tt-btn tt-btn-ghost">
+              🏠 Rooms
+            </a>
+
             {% if user.is_authenticated %}
               {% if user.is_staff %}
                 <!-- Staff only: add product -->
                 <a href="{% url 'product_create' %}" class="tt-btn tt-btn-primary">
                   + Add Product
                 </a>
-              {% endif %}
 
-              <!-- User chip -->
-              <div class="tt-chip">
-                <div class="tt-chip-dot">
-                  {{ user.username|first|upper }}
+                <!-- Staff: user chip links to Django admin dashboard -->
+                <a href="{% url 'admin:index' %}" class="tt-chip tt-chip-link" title="Admin dashboard">
+                  <div class="tt-chip-dot">
+                    {{ user.username|first|upper }}
+                  </div>
+                  <span>{{ user.username }}</span>
+                </a>
+              {% else %}
+                <!-- Non-staff: chip is just display -->
+                <div class="tt-chip">
+                  <div class="tt-chip-dot">
+                    {{ user.username|first|upper }}
+                  </div>
+                  <span>{{ user.username }}</span>
                 </div>
-                <span>{{ user.username }}</span>
-              </div>
+              {% endif %}
 
               <!-- Logout -->
               <a href="{% url 'logout' %}" class="tt-btn tt-btn-ghost">
@@ -79,12 +133,15 @@
     <!-- MAIN PAGE CONTENT -->
     <main class="tt-page">
       <div class="tt-container page-content">
+
         {% if messages %}
-          <ul>
+          <div class="tt-flash-container">
             {% for message in messages %}
-              <li>{{ message }}</li>
+              <div class="tt-flash tt-flash-{{ message.tags|default:'info' }}">
+                {{ message }}
+              </div>
             {% endfor %}
-          </ul>
+          </div>
         {% endif %}
 
         {% block content %}{% endblock %}
