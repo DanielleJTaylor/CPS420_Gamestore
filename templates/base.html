@@ -1,75 +1,94 @@
-﻿<!doctype html>
+﻿{% load static %}
+
+<!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>{% block title %}Game Store{% endblock %}</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-        background: #1b1b1b;
-        color: #f5f5f5;
-      }
-      header {
-        background: #252525;
-        padding: 1rem 2rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      header a {
-        color: #f5f5f5;
-        text-decoration: none;
-        margin-right: 1rem;
-      }
-      header a.brand {
-        font-weight: bold;
-        font-size: 1.3rem;
-      }
-      main {
-        padding: 2rem;
-      }
-      .btn {
-        display: inline-block;
-        padding: 0.4rem 0.8rem;
-        border-radius: 4px;
-        border: 1px solid #00bcd4;
-        color: #00bcd4;
-        text-decoration: none;
-        font-size: 0.9rem;
-      }
-      .btn:hover {
-        background: #00bcd4;
-        color: #1b1b1b;
-      }
-    </style>
+
+    <!-- Main app styles -->
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
   </head>
   <body>
-    <header>
-      <div>
-        <a href="{% url 'product_list' %}" class="brand">🎮 Game Store</a>
-      </div>
-      <div>
-        {% if user.is_authenticated %}
-          <span>Hi, {{ user.username }}!</span>
+    <!-- HEADER / NAVBAR -->
+    <header class="tt-header">
+      <div class="tt-container">
+        <div class="tt-header-inner">
 
-          {% if user.is_staff %}
-            <a href="{% url 'product_create' %}" class="btn">+ Add Product</a>
-          {% endif %}
+          <!-- Brand: always goes to product list -->
+          <a href="{% url 'product_list' %}" class="tt-brand">
+            <span class="tt-logo">🎮</span>
+            <span>Game Store</span>
+          </a>
 
-          <a href="{% url 'logout' %}">Logout</a>
-          <a href="/admin/">Admin</a>
-        {% else %}
-          <a href="{% url 'login' %}">Login</a>
-          <a href="{% url 'signup' %}">Sign Up</a>
-          <a href="/admin/">Admin</a>
-        {% endif %}
+          <!-- Search: submits ?q=... to product_list -->
+          <form class="tt-search" method="get" action="{% url 'product_list' %}">
+            <input
+              class="tt-search-input"
+              type="text"
+              name="q"
+              placeholder="Search (demo only)"
+              value="{{ request.GET.q|default_if_none:'' }}"
+            >
+            <button type="submit" class="tt-btn tt-btn-ghost">
+              Search
+            </button>
+          </form>
+
+          <!-- Right-side actions -->
+          <div class="tt-actions">
+            <!-- Cart button -->
+            <a href="{% url 'cart_detail' %}" class="tt-btn tt-btn-ghost">
+              🛒 Cart
+            </a>
+
+            {% if user.is_authenticated %}
+              {% if user.is_staff %}
+                <!-- Staff only: add product -->
+                <a href="{% url 'product_create' %}" class="tt-btn tt-btn-primary">
+                  + Add Product
+                </a>
+              {% endif %}
+
+              <!-- User chip -->
+              <div class="tt-chip">
+                <div class="tt-chip-dot">
+                  {{ user.username|first|upper }}
+                </div>
+                <span>{{ user.username }}</span>
+              </div>
+
+              <!-- Logout -->
+              <a href="{% url 'logout' %}" class="tt-btn tt-btn-ghost">
+                Logout
+              </a>
+            {% else %}
+              <!-- Not logged in: show Login / Signup -->
+              <a href="{% url 'login' %}" class="tt-btn tt-btn-ghost">
+                Login
+              </a>
+              <a href="{% url 'signup' %}" class="tt-btn tt-btn-primary">
+                Sign up
+              </a>
+            {% endif %}
+          </div>
+        </div>
       </div>
     </header>
 
-    <main>
-      {% block content %}{% endblock %}
+    <!-- MAIN PAGE CONTENT -->
+    <main class="tt-page">
+      <div class="tt-container page-content">
+        {% if messages %}
+          <ul>
+            {% for message in messages %}
+              <li>{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+      </div>
     </main>
   </body>
 </html>

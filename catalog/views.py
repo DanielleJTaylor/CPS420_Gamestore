@@ -71,3 +71,63 @@ def logout_view(request):
     """
     logout(request)
     return redirect("product_list")
+
+
+from .cart import Cart
+
+def cart_detail(request):
+    cart = Cart(request)
+    return render(request, "cart/cart_detail.html", {"cart": cart})
+
+
+def cart_add(request, product_id):
+    cart = Cart(request)
+    product = get_object_or_404(Product, id=product_id)
+    cart.add(product, quantity=1)
+    return redirect("cart_detail")
+
+
+def cart_remove(request, product_id):
+    cart = Cart(request)
+    product = get_object_or_404(Product, id=product_id)
+    cart.remove(product)
+    return redirect("cart_detail")
+
+
+def cart_update(request, product_id):
+    """
+    Adjust quantity using up/down buttons.
+    direction = 'up' → +1
+    direction = 'down' → -1
+    If qty falls to 0 or below, item is removed.
+    """
+    cart = Cart(request)
+    product = get_object_or_404(Product, id=product_id)
+
+    if request.method == "POST":
+        direction = request.POST.get("direction")
+        # current quantity in the cart
+        current_qty = cart.cart.get(str(product.id), {}).get("quantity", 0)
+
+        if direction == "up":
+            qty = current_qty + 1
+        elif direction == "down":
+            qty = current_qty - 1
+        else:
+            # fallback: numeric quantity if ever needed
+            try:
+                qty = int(request.POST.get("quantity", current_qty))
+            except ValueError:
+                qty = current_qty
+
+        # clamp and update
+        qty = max(0, min(qty, 999))
+        cart.add(product, quantity=qty, override_quantity=True)
+
+    return redirect("cart_detail")
+
+
+
+
+
+signup_view = signup

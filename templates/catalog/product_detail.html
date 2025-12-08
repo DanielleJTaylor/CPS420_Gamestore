@@ -3,34 +3,88 @@
 {% block title %}{{ product.name }} – Game Store{% endblock %}
 
 {% block content %}
-  <p>
-    <a href="{% url 'product_list' %}" style="color:#00bcd4;">
-      ← Back to products
-    </a>
-  </p>
+  <section class="tt-detail-page">
 
-  <h1>{{ product.name }}</h1>
+    <p class="tt-back-btn">
+      <a href="{% url 'product_list' %}" class="btn btn-sm btn-secondary">
+        ← Back to products
+      </a>
+    </p>
 
-  <div style="margin-bottom:1rem;">
-    <strong style="font-size:1.4rem;">${{ product.price }}</strong>
-  </div>
+    <div class="tt-detail-layout">
+      <!-- LEFT: media -->
+      <div class="tt-detail-media">
+        <div class="tt-detail-image-wrap">
+          {% if product.image %}
+            <img src="{{ product.image.url }}"
+                 alt="{{ product.name }}"
+                 class="tt-detail-image" />
+          {% elif product.image_url %}
+            <img src="{{ product.image_url }}"
+                 alt="{{ product.name }}"
+                 class="tt-detail-image" />
+          {% else %}
+            <div class="tt-detail-image placeholder">
+              No image uploaded for this product.
+            </div>
+          {% endif %}
+        </div>
 
-  {% if product.image %}
-    <div style="margin-bottom:1rem;">
-      <img src="{{ product.image.url }}" alt="{{ product.name }}" style="max-width:300px; border-radius:4px;">
+        <!-- optional thumbnails row (demo / static) -->
+        <div class="tt-detail-thumbs">
+          <div class="tt-detail-thumb active">
+            {% if product.image %}
+              <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% elif product.image_url %}
+              <img src="{{ product.image_url }}" alt="{{ product.name }}">
+            {% else %}
+              <span>★</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: info -->
+      <div class="tt-detail-info">
+        <header class="tt-detail-header">
+          <h1 class="tt-detail-title">{{ product.name }}</h1>
+          <p class="tt-detail-seller">
+            Category: {{ product.category|default:"Uncategorized" }}
+          </p>
+          <p class="tt-detail-meta">
+            In Stock: {{ product.inventory_qty }}
+          </p>
+        </header>
+
+        <div class="tt-detail-price-box">
+          <div>
+            <div class="tt-detail-price-label">Price</div>
+            <div class="tt-detail-price">
+              ${{ product.price }}
+            </div>
+          </div>
+          <div class="tt-detail-end-time">
+            <span>Demo store item</span><br>
+            <small>Contact admin to edit or remove.</small>
+          </div>
+        </div>
+
+        <section class="tt-detail-description">
+          <h2>Description</h2>
+          {% if product.description %}
+            <p>{{ product.description|linebreaks }}</p>
+          {% else %}
+            <p>No description has been added for this product yet.</p>
+          {% endif %}
+        </section>
+
+        <div class="tt-detail-actions">
+          <!-- In a real project, one could wire this to a cart view -->
+          <button type="button" class="btn btn-primary">
+            Add to Cart (Mock)
+          </button>
+        </div>
+      </div>
     </div>
-  {% elif product.image_url %}
-    <div style="margin-bottom:1rem;">
-      <img src="{{ product.image_url }}" alt="{{ product.name }}" style="max-width:300px; border-radius:4px;">
-    </div>
-  {% endif %}
-
-  <p>{{ product.description|linebreaks }}</p>
-
-  <p>
-    <small>
-      Category: {{ product.category|default:"Uncategorized" }} |
-      In Stock: {{ product.inventory_qty }}
-    </small>
-  </p>
+  </section>
 {% endblock %}

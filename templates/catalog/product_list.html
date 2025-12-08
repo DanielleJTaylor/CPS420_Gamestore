@@ -6,39 +6,77 @@
   <h1>Available Games & Items</h1>
 
   {% if products %}
-    <ul style="list-style:none; padding:0; display:grid; gap:1rem;">
+    <div class="auction-grid">
       {% for p in products %}
-        <li style="border:1px solid #333; border-radius:8px; padding:1rem; background:#222;">
-          <h2 style="margin-top:0;">
-            <a href="{% url 'product_detail' p.slug %}" style="color:#00bcd4; text-decoration:none;">
-              {{ p.name }}
-            </a>
-          </h2>
+        <article class="auction-card">
 
-          <div><strong>${{ p.price }}</strong></div>
+          <!-- IMAGE AREA -->
+          <a href="{% url 'product_detail' p.slug %}" class="auction-image">
+            {% if p.image %}
+              <img src="{{ p.image.url }}" alt="{{ p.name }}">
+            {% elif p.image_url %}
+              <img src="{{ p.image_url }}" alt="{{ p.name }}">
+            {% else %}
+              <div class="auction-image-placeholder">
+                No image uploaded yet
+              </div>
+            {% endif %}
+          </a>
 
-          {% if p.image %}
-            <div style="margin-top:0.5rem;">
-              <img src="{{ p.image.url }}" alt="{{ p.name }}" style="max-width:200px; border-radius:4px;">
+          <!-- MAIN CONTENT -->
+          <div class="auction-main">
+            <header class="auction-card-header">
+              <h2 class="auction-title">
+                <a href="{% url 'product_detail' p.slug %}">
+                  {{ p.name }}
+                </a>
+              </h2>
+            </header>
+
+            <div class="auction-body">
+              {% if p.description %}
+                <p class="auction-description">
+                  {{ p.description|truncatewords:25 }}
+                </p>
+              {% else %}
+                <p class="auction-description auction-description--muted">
+                  No description provided yet.
+                </p>
+              {% endif %}
             </div>
-          {% elif p.image_url %}
-            <div style="margin-top:0.5rem;">
-              <img src="{{ p.image_url }}" alt="{{ p.name }}" style="max-width:200px; border-radius:4px;">
-            </div>
-          {% endif %}
 
-          <p style="margin-top:0.5rem;">
-            {{ p.description|truncatewords:20 }}
-          </p>
+            <!-- FOOTER -->
+            <footer class="auction-card-footer">
+              <div class="auction-footer-meta">
+                <p class="auction-meta-line">
+                  <span class="auction-meta-em">${{ p.price }}</span>
+                  · Category: {{ p.category|default:"Uncategorized" }}
+                </p>
+                <p class="auction-meta-line">
+                  In Stock: <span class="auction-meta-em">{{ p.inventory_qty }}</span>
+                </p>
+              </div>
 
-          <small>
-            Category: {{ p.category|default:"Uncategorized" }} |
-            In Stock: {{ p.inventory_qty }}
-          </small>
-        </li>
+              <div class="auction-footer-actions">
+                <a href="{% url 'product_detail' p.slug %}"
+                   class="btn btn-sm btn-secondary auction-details-btn">
+                  View Details
+                </a>
+
+                <form method="post" action="{% url 'cart_add' p.id %}">
+                  {% csrf_token %}
+                  <button type="submit"
+                          class="btn btn-sm btn-primary auction-details-btn">
+                    Add to Cart
+                  </button>
+                </form>
+              </div>
+            </footer>
+          </div>
+        </article>
       {% endfor %}
-    </ul>
+    </div>
   {% else %}
-    <p>No products yet. Log in as admin and add one, or use the Django admin.</p>
+    <p>No products yet. Log in as admin and add some!</p>
   {% endif %}
 {% endblock %}
