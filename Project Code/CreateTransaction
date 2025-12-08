@@ -1,0 +1,86 @@
+from datetime import date, datetime, timedelta
+from typing import List
+from CreateCustomerAccount import Customer
+
+class Transaction:
+    def __init__(self, transactionID: str, customer: Customer, payMethod: str, points: int, transactionDate: Optional[datetime] = None):
+        self.transactionID = transactionID
+        self.customer: Customer = customer
+        self.payMethod: str = payMethod
+        self.items: List[Item] = []
+        self.totalPrice: float = 0.0
+        self.points: int = points
+        self.transactionDate = transactionDate or datetime.now()
+
+    def addItem(self, item: Item):
+        self.items.append(item)
+        self.calculateTotalPrice()
+
+    def deleteItem(self, itemID: str):
+        self.items = [item for item in self.items if item.itemID != itemID]
+        self.calculateTotalPrice()
+
+    def calculateTotalPrice(self) -> float:
+        self.totalPrice = sum(item.calculatePrice() for item in self.items)
+        return self.totalPrice
+
+    def calculatePoints(self) -> int:
+        self.points = int(self.totalPrice // 10)
+        return self.points
+
+    def completeTransaction(self):
+        self.customer.addPoints(self.calculatePoints())
+        self.customer.transactions.append(self)
+
+class Item:
+    def __init__(self, itemID: str, quantity: int, price: float):
+        self.itemID = itemID
+        self.quantity = quantity
+        self.price = price
+    
+    def calculatePrice(self) -> float:
+        return self.price * self.quantity
+
+class Rental(Transaction):
+    def __init__(self, transactionID: str, customer: Customer, transactionDate_: date, dueStatus: str):
+        super().__init__(transactionID, customer = customer, paymethod = payMethod, points = 0, transactionDate = datetime.combine(transactionDate_, datetime.min.time()))
+        self.dueDate = transactionDate_ + timedelta(days=14)
+        self.dueStatus = dueStatus
+        self.overdue = Overdue()
+
+    def addItem(self, item: Item):
+        super().addItem(item)
+
+    def returnItem(self):
+        self.dueStatus = "Returned"
+
+    def updateDueStatus(self):
+        today = date.today()
+
+        if self.dueStatus == "Returned":
+            return
+
+        if today > self.dueDate:
+            self.dueStatus = "Late"
+            self.overdue.daysLate = (today - self.dueDate).days
+        else:
+            self.dueStatus = "On Rent"
+
+    def completeTransaction(self):
+        super().completeTransaction()
+
+class Overdue:
+    feeRate = 0.1
+
+    def __init__(self, feeAmount: float = 0, daysLate: int = 0):
+        self.feeAmount = feeAmount
+        self.daysLate = daysLate
+
+    def calculateFeeAmount(self, item: List[Item]):
+        six_months = 180
+
+        if self.daysLate <= six_months:
+            self.feeAmount = self.daysLate * self.feeRate
+        else:
+            self.feeAmount = sum(i.calculatePrice() for i in item) + (self.feeRate * six_months)
+        return self.feeAmount
