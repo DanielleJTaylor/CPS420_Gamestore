@@ -613,7 +613,7 @@ main.tt-page { padding: 0 16px; }
 }
 
 /* =========================
-   AUCTION LIST CARDS
+   AUCTION LIST CARDS (PRODUCT GRID)
 ========================= */
 
 /* grid for product list */
@@ -678,7 +678,6 @@ main.tt-page { padding: 0 16px; }
   display: block;
 }
 
-
 /* MAIN CONTENT */
 .auction-main {
   flex: 1;
@@ -726,7 +725,7 @@ main.tt-page { padding: 0 16px; }
   gap: 0.65rem;
 }
 
-/* seller + listed info */
+/* footer meta text */
 .auction-footer-meta {
   font-size: 0.8rem;
   color: #9ca3af;
@@ -747,6 +746,21 @@ main.tt-page { padding: 0 16px; }
   gap: 0.5rem;
 }
 
+/* Make card buttons small, same height, and not full-width */
+.auction-footer-actions .btn {
+  width: auto;
+  min-width: 110px;
+  height: 36px;
+  margin-top: 0;
+  padding: 0 12px;
+}
+
+/* override global full-width in cards only */
+.auction-footer-actions .btn-primary,
+.auction-footer-actions .btn-secondary {
+  width: auto;
+}
+
 /* button tweaks inside cards */
 .auction-details-btn.btn-sm,
 .auction-delete-btn.btn-sm {
@@ -754,71 +768,93 @@ main.tt-page { padding: 0 16px; }
   font-size: 0.82rem;
 }
 
+/* =========================
+   CART STYLES
+========================= */
 
-/* --- Cart styles --- */
 .cart-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1.5rem;
-}
-.cart-table th,
-.cart-table td {
-  padding: 0.75rem 0.5rem;
-  border-bottom: 1px solid #2b2f3a;
-  font-size: 0.95rem;
-}
-.cart-table th {
-  text-align: left;
-  color: #cfd6eb;
-}
-.cart-line-price {
-  text-align: right;
+  background: #050816;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #1a2232;
 }
 
+.cart-table th,
+.cart-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #1a2232;
+  text-align: left;
+}
+
+.cart-table th {
+  background: #0b1120;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cart-table tr:last-child td {
+  border-bottom: none;
+}
+
+.cart-total-row td {
+  font-weight: 700;
+  font-size: 1rem;
+  border-top: 1px solid #1a2232;
+}
+
+/* qty up/down controls */
 .cart-qty-form {
   display: flex;
   align-items: center;
   gap: 6px;
 }
-.cart-qty-input {
-  width: 64px;
-  height: 32px;
+
+.cart-qty-btn {
+  width: 28px;
+  height: 28px;
   border-radius: 6px;
   border: 1px solid #555;
   background: #1f2430;
   color: #f5f5f5;
-  padding: 0 6px;
-  outline: none;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background-color 0.2s, border-color 0.2s, transform 0.05s;
 }
-.cart-qty-input:focus {
+.cart-qty-btn:hover {
+  background: #273045;
   border-color: var(--blue);
 }
+.cart-qty-btn:active {
+  transform: translateY(1px);
+}
 
-.cart-summary {
-  margin-top: 1rem;
-  text-align: right;
-  font-size: 1rem;
+.cart-qty-value {
+  min-width: 24px;
+  text-align: center;
   font-weight: 600;
 }
+
+/* cart page action buttons row */
 .cart-actions-row {
-  margin-top: 1rem;
+  margin-top: 1.25rem;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.75rem;
 }
 
-/* --- Fix card footer button sizing & alignment --- */
-.auction-footer-actions {
-  margin-top: 0;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* Override the global full-width buttons just inside cards */
-.auction-footer-actions .btn {
+.cart-actions-row .btn {
   width: auto;
-  min-width: 110px;
+  min-width: 140px;
+  height: 40px;
   margin-top: 0;
 }
